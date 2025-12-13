@@ -6,7 +6,7 @@ OUTPUT_DIR = Path("qr_codes")
 
 # Only allow QR links to these domains (change to your own)
 ALLOWED_DOMAINS = [
-    "yourusername.github.io",
+    "lykeosovann.github.io",
 ]
 
 # Read secret from environment (DO NOT hardcode in code)
