@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Secure QR Receiver</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.4; }
+    code, pre { background: #f4f4f4; padding: .5rem; border-radius: 8px; overflow-x: auto; display: block; }
+    .box { border: 1px solid #ddd; border-radius: 12px; padding: 1rem; }
+    .warn { color: #9a5b00; }
+  </style>
+</head>
+<body>
+  <h1>Secure QR Receiver</h1>
+
+  <div class="box">
+    <p>This page received a token from the QR code.</p>
+    <p class="warn">
+      Note: GitHub Pages is static, so it cannot decrypt the token here.
+      Decryption/verification must happen on a backend or in your local Python tool.
+    </p>
+
+    <h3>Token (t)</h3>
+    <pre id="token">(no token found)</pre>
+
+    <h3>Next step (typical secure design)</h3>
+    <p>Send the token to a backend verification endpoint (example):</p>
+    <code id="exampleUrl"></code>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("t");
+
+    const tokenEl = document.getElementById("token");
+    const exampleEl = document.getElementById("exampleUrl");
+
+    if (token) {
+      tokenEl.textContent = token;
+
+      // Example only: replace with your real backend if you have one.
+      const verifyEndpoint = "https://YOUR_BACKEND_DOMAIN/verify?t=" + encodeURIComponent(token);
+      exampleEl.textContent = verifyEndpoint;
+    } else {
+      tokenEl.textContent = "(no token found in URL. Expected ?t=...)";
+      exampleEl.textContent = "(add ?t=... to the URL)";
+    }
+  </script>
+</body>
+</html>
