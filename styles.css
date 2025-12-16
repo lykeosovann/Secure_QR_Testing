@@ -1,0 +1,148 @@
+:root{
+  --border:#cfcfcf;
+  --muted:#666;
+  --ok:#0a7a2f;
+  --err:#b00020;
+  --bg:#ffffff;
+}
+
+body{
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  margin: 14px;
+  font-size: 13px;
+}
+
+.app{ max-width: 880px; }
+
+.title{
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.panel{
+  border: 1px solid var(--border);
+  padding: 12px;
+  margin: 10px 0 14px;
+  border-radius: 4px;
+}
+
+legend{
+  padding: 0 8px;
+  font-weight: 600;
+}
+
+label{
+  display:block;
+  margin: 10px 0 6px;
+}
+
+textarea, input[type="password"]{
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 7px 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+textarea{
+  min-height: 92px;
+  resize: vertical;
+}
+
+.hint{
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.btn-row{
+  display:flex;
+  justify-content:center;
+  margin-top: 10px;
+}
+
+button{
+  border: 1px solid #a8a8a8;
+  background: #f2f2f2;
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+button:disabled{
+  opacity: .6;
+  cursor:not-allowed;
+}
+
+.status{
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.status.ok{ color: var(--ok); font-weight: 600; }
+.status.err{ color: var(--err); font-weight: 600; }
+
+.qr-area{
+  display:grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.qr-box{
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#qrCanvas{
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px;
+  background:#fff;
+}
+
+.small{
+  font-size: 12px;
+  color:#555;
+}
+
+pre{
+  background:#f6f6f6;
+  border-radius: 6px;
+  padding: 10px;
+  overflow-x:auto;
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 140px;
+}
+
+.row{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* file input styling */
+.file-label input{ display:none; }
+.file-btn{
+  display:inline-block;
+  border: 1px solid #a8a8a8;
+  background:#f2f2f2;
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor:pointer;
+}
+
+.hidden{ display:none; }
+
+@media (max-width: 760px){
+  .qr-area{ grid-template-columns: 1fr; }
+}
