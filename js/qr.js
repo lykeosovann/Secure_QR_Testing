@@ -1,36 +1,40 @@
 async function drawQr(canvas, text) {
-  if (!canvas) throw new Error("qrCanvas not found");
-  if (!window.QRCode) throw new Error("QRCode library not loaded");
+  const errEl = document.getElementById("qrError");
+  const showErr = (m) => {
+    if (errEl) { errEl.className = "status err"; errEl.textContent = m; }
+  };
 
-  // Make sure canvas has real drawing size
-  canvas.width = 240;
-  canvas.height = 240;
+  if (!canvas) {
+    showErr("QR canvas not found (id=qrCanvas).");
+    return;
+  }
 
-  // Draw QR
-  await window.QRCode.toCanvas(canvas, text, { width: 240, margin: 1 });
+  // Check library
+  if (!window.QRCode || !window.QRCode.toCanvas) {
+    showErr("QRCode library NOT loaded. Check libs/qrcode.min.js path and script order.");
+    return;
+  }
 
-  // Safety: force visible size (CSS can hide it)
-  canvas.style.width = "240px";
-  canvas.style.height = "240px";
-  canvas.style.display = "block";
-}
+  try {
+    // Force size
+    canvas.width = 240;
+    canvas.height = 240;
 
+    // Clear
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function readQrFromImage(file, hiddenCanvas) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      hiddenCanvas.width = img.naturalWidth;
-      hiddenCanvas.height = img.naturalHeight;
+    // Draw QR
+    await window.QRCode.toCanvas(canvas, text, { width: 240, margin: 1 });
 
-      const ctx = hiddenCanvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
+    // Force visible
+    canvas.style.width = "240px";
+    canvas.style.height = "240px";
+    canvas.style.display = "block";
 
-      const imgData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-      const code = jsQR(imgData.data, imgData.width, imgData.height);
-      if (!code) return reject("QR not detected");
-      resolve(code.data);
-    };
-    img.src = URL.createObjectURL(file);
-  });
+    if (errEl) { errEl.className = "status ok"; errEl.textContent = "QR rendered ✅"; }
+  } catch (e) {
+    showErr("QR draw error: " + (e?.message || e));
+    console.error(e);
+  }
 }

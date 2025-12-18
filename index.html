@@ -30,7 +30,8 @@
       </div>
 
       <div class="btn-row">
-        <button id="btnEncrypt" class="btn">Encrypt &amp; Create QR</button>
+        <button id="btnEncrypt" class="btn" type="button">Encrypt &amp; Create QR</button>
+        <button id="btnSelfTest" class="btn" type="button">Self-Test</button>
       </div>
 
       <div id="encStatus" class="status"></div>
@@ -38,7 +39,12 @@
       <div class="grid">
         <div class="card">
           <div class="card-title">QR Code</div>
+
           <canvas id="qrCanvas" width="240" height="240"></canvas>
+
+          <!-- NEW: QR status so you know what is wrong -->
+          <div id="qrError" class="status" style="margin-top:10px;"></div>
+
           <p class="small">Tip: long-press (mobile) or right-click (PC) to save QR image.</p>
         </div>
 
@@ -58,14 +64,14 @@
           <input id="qrFile" type="file" accept="image/*" />
           <span class="btn">Select QR Image</span>
         </label>
-        <button id="btnDecode" class="btn">Load QR</button>
+        <button id="btnDecode" class="btn" type="button">Load QR</button>
       </div>
 
       <label for="decPwd">Password (same as encryption):</label>
       <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
 
       <div class="btn-row">
-        <button id="btnDecrypt" class="btn">Decrypt</button>
+        <button id="btnDecrypt" class="btn" type="button">Decrypt</button>
       </div>
 
       <div id="decStatus" class="status"></div>
@@ -73,14 +79,11 @@
       <label for="decMsg">Decrypted message:</label>
       <textarea id="decMsg" readonly placeholder="Decrypted message will appear here..."></textarea>
 
-      <!-- hidden canvas for QR decoding -->
       <canvas id="hiddenCanvas" class="hidden"></canvas>
     </section>
 
     <footer class="footer">
-      <p class="small">
-        Note: Encryption/decryption happens locally in your browser. Keep passwords private.
-      </p>
+      <p class="small">Note: Encryption/decryption happens locally in your browser. Keep passwords private.</p>
     </footer>
   </main>
 
@@ -93,7 +96,39 @@
   <script src="./js/crypto.js"></script>
   <script src="./js/qr.js"></script>
   <script src="./js/ui.js"></script>
-  
+
+  <!-- NEW: small self-test that runs even if app.js fails -->
+  <script>
+    (function () {
+      const btn = document.getElementById("btnSelfTest");
+      const qrErr = document.getElementById("qrError");
+      const show = (cls, msg) => { qrErr.className = "status " + cls; qrErr.textContent = msg; };
+
+      btn.addEventListener("click", async () => {
+        // Check if libs loaded
+        if (!window.QRCode || !window.QRCode.toCanvas) {
+          show("err", "Self-Test FAIL: QRCode library not loaded. Check libs/qrcode.min.js path (404?)");
+          return;
+        }
+        if (!window.jsQR) {
+          show("err", "Self-Test FAIL: jsQR library not loaded. Check libs/jsQR.js path (404?)");
+          return;
+        }
+
+        // Try drawing a tiny test QR
+        try {
+          const c = document.getElementById("qrCanvas");
+          c.width = 240; c.height = 240;
+          await window.QRCode.toCanvas(c, "TEST", { width: 240, margin: 1 });
+          c.style.width = "240px"; c.style.height = "240px"; c.style.display = "block";
+          show("ok", "Self-Test OK: QR rendering works ✅");
+        } catch (e) {
+          show("err", "Self-Test FAIL: " + (e?.message || e));
+        }
+      });
+    })();
+  </script>
+
   <script src="./app.js"></script>
 </body>
 </html>
