@@ -5,24 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AES + QR Secure Message System</title>
   <link rel="stylesheet" href="./styles.css" />
-
-  <!-- QR generator -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <!-- QR decoder (from image) -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-  <script src="./libs/qrcode.min.js"></script>
-  <script src="./libs/jsQR.js"></script>
-  <script src="./app.js"></script>
-
 </head>
 
 <body>
-  <div class="app">
-    <div class="title">AES + QR Secure Message System</div>
+  <main class="app">
+    <header class="header">
+      <h1 class="title">AES + QR Secure Message System</h1>
+      <p class="subtitle">Encrypt a message into a QR. Decrypt requires the same password.</p>
+    </header>
 
     <!-- Encrypt panel -->
-    <fieldset class="panel">
-      <legend>Encrypt &amp; Generate QR</legend>
+    <section class="panel">
+      <div class="panel-head">Encrypt &amp; Generate QR</div>
 
       <label for="secretMsg">Secret message:</label>
       <textarea id="secretMsg" placeholder="Type your secret message here..."></textarea>
@@ -36,42 +30,42 @@
       </div>
 
       <div class="btn-row">
-        <button id="btnEncrypt">Encrypt &amp; Create QR</button>
+        <button id="btnEncrypt" class="btn">Encrypt &amp; Create QR</button>
       </div>
 
       <div id="encStatus" class="status"></div>
 
-      <div class="qr-area">
-        <div class="qr-box">
-          <canvas id="qrCanvas" width="220" height="220"></canvas>
-          <div class="small">Right-click / long-press to save the QR image.</div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-title">QR Code</div>
+          <canvas id="qrCanvas" width="240" height="240"></canvas>
+          <p class="small">Tip: long-press (mobile) or right-click (PC) to save QR image.</p>
         </div>
 
-        <div class="payload-box">
-          <div class="small">Encrypted payload (stored inside the QR):</div>
+        <div class="card">
+          <div class="card-title">Encrypted payload (inside QR)</div>
           <pre id="payloadOut">(nothing yet)</pre>
         </div>
       </div>
-    </fieldset>
+    </section>
 
     <!-- Decrypt panel -->
-    <fieldset class="panel">
-      <legend>Decrypt From QR</legend>
+    <section class="panel">
+      <div class="panel-head">Decrypt From QR Image</div>
 
-      <div class="row">
+      <div class="file-row">
         <label class="file-label">
           <input id="qrFile" type="file" accept="image/*" />
-          <span class="file-btn">Select QR Image</span>
+          <span class="btn">Select QR Image</span>
         </label>
-
-        <button id="btnDecode">Load QR</button>
+        <button id="btnDecode" class="btn">Load QR</button>
       </div>
 
       <label for="decPwd">Password (same as encryption):</label>
       <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
 
       <div class="btn-row">
-        <button id="btnDecrypt">Decrypt</button>
+        <button id="btnDecrypt" class="btn">Decrypt</button>
       </div>
 
       <div id="decStatus" class="status"></div>
@@ -79,11 +73,25 @@
       <label for="decMsg">Decrypted message:</label>
       <textarea id="decMsg" readonly placeholder="Decrypted message will appear here..."></textarea>
 
-      <!-- hidden canvas used to read pixels from image -->
+      <!-- hidden canvas for QR decoding -->
       <canvas id="hiddenCanvas" class="hidden"></canvas>
-    </fieldset>
-  </div>
+    </section>
 
+    <footer class="footer">
+      <p class="small">
+        Note: Encryption/decryption happens locally in your browser. Keep passwords private.
+      </p>
+    </footer>
+  </main>
+
+  <!-- Load libraries AFTER HTML exists -->
+  <script src="./libs/qrcode.min.js"></script>
+  <script src="./libs/jsQR.js"></script>
+  <script src="./js/base64.js"></script>
+  <script src="./js/password.js"></script>
+  <script src="./js/crypto.js"></script>
+  <script src="./js/qr.js"></script>
+  <script src="./js/ui.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
