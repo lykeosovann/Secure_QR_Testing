@@ -1,8 +1,20 @@
 async function drawQr(canvas, text) {
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  await QRCode.toCanvas(canvas, text, { width: 240, margin: 1 });
+  if (!canvas) throw new Error("qrCanvas not found");
+  if (!window.QRCode) throw new Error("QRCode library not loaded");
+
+  // Make sure canvas has real drawing size
+  canvas.width = 240;
+  canvas.height = 240;
+
+  // Draw QR
+  await window.QRCode.toCanvas(canvas, text, { width: 240, margin: 1 });
+
+  // Safety: force visible size (CSS can hide it)
+  canvas.style.width = "240px";
+  canvas.style.height = "240px";
+  canvas.style.display = "block";
 }
+
 
 function readQrFromImage(file, hiddenCanvas) {
   return new Promise((resolve, reject) => {
