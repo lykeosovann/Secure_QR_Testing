@@ -1,21 +1,56 @@
 async function drawQr(canvas, text) {
-  if (!window.QRCode || typeof window.QRCode.toCanvas !== "function") {
-    console.error("QRCode global:", window.QRCode);
-    throw new Error("QR generator library not loaded (QRCode.toCanvas missing)");
+  // --- Case A: node-qrcode style (QRCode.toCanvas) ---
+  if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
+    const SIZE = 520;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+
+    await window.QRCode.toCanvas(canvas, text, {
+      width: SIZE,
+      margin: 4,
+      errorCorrectionLevel: "H",
+    });
+    return;
   }
 
-  const SIZE = 520;
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+  // --- Case B: qrcodejs style (new QRCode(element, options)) ---
+  // qrcodejs doesn't draw into your existing <canvas>.
+  // So we convert your canvas into a container div automatically.
+  if (typeof window.QRCode === "function") {
+    const parent = canvas.parentElement;
+    if (!parent) throw new Error("QR container not found");
 
-  await window.QRCode.toCanvas(canvas, text, {
-    width: SIZE,
-    margin: 4,
-    errorCorrectionLevel: "H",
-  });
+    // Create/Reuse a div container next to the canvas
+    let box = parent.querySelector("#qrBox");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "qrBox";
+      box.style.width = "520px";
+      box.style.height = "520px";
+      box.style.background = "#fff";
+      box.style.padding = "8px";
+      box.style.display = "inline-block";
+      box.style.borderRadius = "8px";
+      parent.insertBefore(box, canvas);
+      canvas.style.display = "none"; // hide canvas since qrcodejs uses div/img
+    }
+
+    box.innerHTML = ""; // clear previous QR
+    new window.QRCode(box, {
+      text,
+      width: 520,
+      height: 520,
+      correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 2,
+    });
+    return;
+  }
+
+  // --- No QR library loaded ---
+  console.error("window.QRCode =", window.QRCode);
+  throw new Error("QR generator library not loaded. Check ./libs/qrcode.min.js is correct.");
 }
 
-
+/* --------- QR decode from image (same as before) ---------- */
 function readQrFromImage(file, hiddenCanvas) {
   return new Promise((resolve, reject) => {
     if (!file) return reject(new Error("No image selected"));
