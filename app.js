@@ -82,26 +82,54 @@ btnEncrypt.addEventListener("click", async () => {
  ************************************************************/
 
 qrFile.addEventListener("change", async () => {
+  const dbg = document.getElementById("qrLoadDebug");
+
   loadedPayload = null;
   decMsg.value = "";
   setStatus(decStatus, "", "");
+  if (dbg) { dbg.className = "status"; dbg.textContent = ""; }
 
   const file = qrFile.files && qrFile.files[0];
-  if (!file) return;
+
+  // Show file name
+  const nameEl = document.getElementById("qrFileName");
+  if (nameEl) nameEl.textContent = file ? file.name : "No file selected";
+
+  if (!file) {
+    if (dbg) { dbg.className = "status err"; dbg.textContent = "No file found after selection."; }
+    return;
+  }
+
+  // Check dependencies clearly
+  if (typeof readQrFromImage !== "function") {
+    if (dbg) { dbg.className = "status err"; dbg.textContent = "readQrFromImage() not found. Check js/qr.js function name and load order."; }
+    return;
+  }
+  if (typeof window.jsQR !== "function") {
+    if (dbg) { dbg.className = "status err"; dbg.textContent = "jsQR not loaded. Check ./Libs/jsQR.js path/case."; }
+    return;
+  }
 
   try {
-    setStatus(decStatus, "", "Reading QR image...");
+    if (dbg) { dbg.className = "status"; dbg.textContent = "Reading QR image..."; }
+
     const qrText = await readQrFromImage(file, hiddenCanvas);
 
-    loadedPayload = JSON.parse(qrText.trim());
+    if (dbg) { dbg.className = "status"; dbg.textContent = "QR decoded. Parsing JSON..."; }
 
-    setStatus(decStatus, "ok", "QR loaded ✅ Now enter password and click Decrypt.");
+    loadedPayload = JSON.parse(String(qrText).trim());
+
+    if (dbg) { dbg.className = "status ok"; dbg.textContent = "QR loaded ✅ Now click Decrypt."; }
+    setStatus(decStatus, "ok", "QR loaded ✅");
   } catch (e) {
     console.error(e);
     loadedPayload = null;
-    setStatus(decStatus, "err", "QR load failed: " + (e?.message || e));
+    const msg = e?.message || String(e);
+    if (dbg) { dbg.className = "status err"; dbg.textContent = "QR load failed: " + msg; }
+    setStatus(decStatus, "err", "QR load failed: " + msg);
   }
 });
+
 
 
 /************************************************************

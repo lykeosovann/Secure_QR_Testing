@@ -63,6 +63,7 @@
         <input id="qrFile" class="file-input" type="file" accept="image/*" />
         <span id="qrFileName" class="file-name">No file selected</span>
       </div>
+      <div id="qrLoadDebug" class="status"></div>
       <div class="hint">After selecting an image, the QR will be loaded automatically.</div>
 
       <label for="decPwd">Password (same as encryption):</label>
@@ -70,6 +71,7 @@
         <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
         <button id="decPwdToggle" class="icon-btn" type="button" aria-label="Show/Hide password">👁</button>
       </div>
+
 
       <div class="btn-row">
         <button id="btnDecrypt" class="btn" type="button">Decrypt</button>
