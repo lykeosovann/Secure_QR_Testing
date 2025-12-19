@@ -135,38 +135,43 @@ qrFile.addEventListener("change", async () => {
 /************************************************************
  * DECRYPT
  ************************************************************/
-
 btnDecrypt.addEventListener("click", async () => {
+  // Always clear output first
+  decMsg.value = "";
+  setStatus(decStatus, "", "");
+
+  // Must have QR loaded first
+  if (!loadedPayload) {
+    return setStatus(decStatus, "err", "Please select a QR image first.");
+  }
+
+  // Password required
+  const pwd = decPwd.value.trim();
+  if (!pwd) {
+    return setStatus(decStatus, "err", "Password is required.");
+  }
+
+  // Password rules (invalid password should stop here)
+  const pwdErr = validatePassword(pwd);
+  if (pwdErr) {
+    return setStatus(decStatus, "err", pwdErr);
+  }
+
   try {
-    decMsg.value = "";
-    setStatus(decStatus, "", "");
-
-    if (!loadedPayload) {
-      return setStatus(
-        decStatus,
-        "err",
-        "Please select a QR image first."
-      );
-    }
-
-    const pwd = decPwd.value;
-    const pwdErr = validatePassword(pwd);
-    if (pwdErr) {
-      return setStatus(decStatus, "err", pwdErr);
-    }
-
     setStatus(decStatus, "", "Decrypting...");
 
+    // ONLY on success should we set decMsg.value
     const plaintext = await decryptMessage(loadedPayload, pwd);
-
     decMsg.value = plaintext;
-    setStatus(decStatus, "ok", "Decrypted successfully ✅");
+
+    setStatus(decStatus, "ok", "Decrypted ✅");
   } catch (e) {
     console.error(e);
-    setStatus(
-      decStatus,
-      "err",
-      "Wrong password or corrupted QR data."
-    );
+
+    // Wrong password / modified QR = OperationError commonly
+    if (e && e.name === "OperationError") {
+      return setStatus(decStatus, "err", "Wrong password (or QR data changed).");
+    }
+    setStatus(decStatus, "err", "Decrypt failed.");
   }
 });
