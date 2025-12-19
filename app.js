@@ -119,7 +119,7 @@ function tryLoadPayloadFromHash() {
 }
 
 // Run once on page load
-tryLoadPayloadFromHash();
+tryLoadPayloadFromUrl();
 setDecryptReadyUI(!!loadedPayload);
 
 /************************************************************
@@ -141,10 +141,14 @@ btnEncrypt.addEventListener("click", async () => {
 
     const payload = await encryptMessage(msg, pwd);
     const payloadJson = JSON.stringify(payload);
+    // ✅ Allow decrypt immediately on the same page (no scan/upload needed)
+    loadedPayload = payload;
+    setDecryptReadyUI(true);
+    setStatus(decStatus, "ok", "Payload ready ✅ Enter password to decrypt (or scan QR on phone).");
 
     const baseUrl = buildBaseUrl();
     const token = b64uEncode(payloadJson);
-    const url = `${baseUrl}#t=${token}`;
+    const url = `${baseUrl}?t=${token}#t=${token}`;
 
     // Show QR URL (so you can copy/test)
     if (payloadOut) payloadOut.textContent = url;
@@ -255,3 +259,33 @@ btnDecrypt.addEventListener("click", async () => {
     setStatus(decStatus, "err", e?.message || "Decrypt failed.");
   }
 });
+function tryLoadPayloadFromUrl() {
+  // 1) Try query string ?t=
+  const qp = new URLSearchParams(location.search);
+  let token = qp.get("t");
+
+  // 2) Fallback to hash #t=
+  if (!token) {
+    const hash = location.hash || "";
+    const m = hash.match(/(?:^|[#&])t=([^&]+)/);
+    if (m) token = m[1];
+  }
+
+  if (!token) return false;
+
+  try {
+    const jsonText = b64uDecodeToString(token);
+    loadedPayload = JSON.parse(jsonText);
+
+    setStatus(decStatus, "ok", "QR payload loaded ✅ Enter password and decrypt.");
+    setDecryptReadyUI(true);
+    decPwd.focus();
+    return true;
+  } catch (e) {
+    console.error(e);
+    loadedPayload = null;
+    setStatus(decStatus, "err", "Invalid QR payload in URL.");
+    setDecryptReadyUI(false);
+    return false;
+  }
+}
