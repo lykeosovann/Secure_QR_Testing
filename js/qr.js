@@ -1,40 +1,27 @@
 async function drawQr(canvas, text) {
-  const errEl = document.getElementById("qrError");
-  const showErr = (m) => {
-    if (errEl) { errEl.className = "status err"; errEl.textContent = m; }
-  };
+  if (!canvas) throw new Error("qrCanvas not found");
+  if (!window.QRCode) throw new Error("QRCode library not loaded");
 
-  if (!canvas) {
-    showErr("QR canvas not found (id=qrCanvas).");
-    return;
-  }
+  // Clear canvas container
+  const parent = canvas.parentElement;
 
-  // Check library
-  if (!window.QRCode || !window.QRCode.toCanvas) {
-    showErr("QRCode library NOT loaded. Check libs/qrcode.min.js path and script order.");
-    return;
-  }
+  // Remove old QR if exists
+  const old = parent.querySelector(".qr-img");
+  if (old) old.remove();
 
-  try {
-    // Force size
-    canvas.width = 240;
-    canvas.height = 240;
+  // Create a div container for QRCode.js
+  const box = document.createElement("div");
+  box.className = "qr-img";
+  parent.insertBefore(box, canvas);
 
-    // Clear
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Hide the unused canvas (QRCode.js creates its own <canvas> or <img>)
+  canvas.style.display = "none";
 
-    // Draw QR
-    await window.QRCode.toCanvas(canvas, text, { width: 240, margin: 1 });
-
-    // Force visible
-    canvas.style.width = "240px";
-    canvas.style.height = "240px";
-    canvas.style.display = "block";
-
-    if (errEl) { errEl.className = "status ok"; errEl.textContent = "QR rendered ✅"; }
-  } catch (e) {
-    showErr("QR draw error: " + (e?.message || e));
-    console.error(e);
-  }
+  // Generate QR
+  new QRCode(box, {
+    text,
+    width: 240,
+    height: 240,
+    correctLevel: QRCode.CorrectLevel.M
+  });
 }
