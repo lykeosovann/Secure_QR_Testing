@@ -200,6 +200,26 @@ pre {
   font-size: 12px;
   color: #555;
 }
+.input-icon{
+  position: relative;
+}
+.input-icon input{
+  padding-right: 44px; /* space for the eye icon */
+}
+.icon-btn{
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--btnborder, #a8a8a8);
+  background: var(--btnbg, #f2f2f2);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
 
 /* Responsive layout for larger screens */
 @media (min-width: 860px) {

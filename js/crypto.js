@@ -40,16 +40,22 @@ async function encryptMessage(message, password) {
 }
 
 async function decryptMessage(payload, password) {
-  const salt = b64uDecode(payload.salt);
-  const iv = b64uDecode(payload.iv);
-  const ct = b64uDecode(payload.ct);
+  // Validate payload fields
+  if (!payload || payload.v !== 1) throw new Error("Invalid payload version.");
+  if (!payload.salt || !payload.iv || !payload.ct || payload.iter == null)
+    throw new Error("Missing fields in QR payload.");
 
-  const key = await deriveKey(password, salt, payload.iter);
-  const plainBuf = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    key,
-    ct
-  );
+  const iterations = Number(payload.iter);
+  if (!Number.isFinite(iterations) || iterations < 10000)
+    throw new Error("Invalid iteration count.");
 
+  const salt = b64uDecode(String(payload.salt).trim());
+  const iv   = b64uDecode(String(payload.iv).trim());
+  const ct   = b64uDecode(String(payload.ct).trim());
+
+  const key = await deriveKey(password, salt, iterations);
+
+  // WebCrypto throws OperationError if wrong password / tampered data
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
   return new TextDecoder().decode(plainBuf);
 }
