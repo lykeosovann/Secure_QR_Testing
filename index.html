@@ -22,7 +22,10 @@
       <textarea id="secretMsg" placeholder="Type your secret message here..."></textarea>
 
       <label for="encPwd">Password (shared secret key):</label>
-      <input id="encPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
+      <div class="pwd-wrap">
+        <input id="encPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
+        <button id="encPwdToggle" class="pwd-toggle" type="button" aria-label="Show/Hide password">👁️</button>
+      </div>
 
       <div class="hint">
         Password rules: at least <b>12</b> chars, must include <b>lower</b>, <b>upper</b>, <b>digit</b>,
@@ -31,7 +34,6 @@
 
       <div class="btn-row">
         <button id="btnEncrypt" class="btn" type="button">Encrypt &amp; Create QR</button>
-        <button id="btnSelfTest" class="btn" type="button">Self-Test</button>
       </div>
 
       <div id="encStatus" class="status"></div>
@@ -39,12 +41,8 @@
       <div class="grid">
         <div class="card">
           <div class="card-title">QR Code</div>
-
           <canvas id="qrCanvas" width="240" height="240"></canvas>
-
-          <!-- NEW: QR status so you know what is wrong -->
-          <div id="qrError" class="status" style="margin-top:10px;"></div>
-
+          <div id="qrError" class="status"></div>
           <p class="small">Tip: long-press (mobile) or right-click (PC) to save QR image.</p>
         </div>
 
@@ -59,16 +57,19 @@
     <section class="panel">
       <div class="panel-head">Decrypt From QR Image</div>
 
+      <label>Select QR Image:</label>
       <div class="file-row">
-        <label class="file-label">
-          <input id="qrFile" type="file" accept="image/*" />
-          <span class="btn">Select QR Image</span>
-        </label>
-        <button id="btnDecode" class="btn" type="button">Load QR</button>
+        <!-- IMPORTANT: input is visible to JS, but styled -->
+        <input id="qrFile" class="file-input" type="file" accept="image/*" />
+        <span id="qrFileName" class="file-name">No file selected</span>
       </div>
+      <div class="hint">After selecting an image, the QR will be loaded automatically.</div>
 
       <label for="decPwd">Password (same as encryption):</label>
-      <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
+      <div class="pwd-wrap">
+        <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
+        <button id="decPwdToggle" class="pwd-toggle" type="button" aria-label="Show/Hide password">👁️</button>
+      </div>
 
       <div class="btn-row">
         <button id="btnDecrypt" class="btn" type="button">Decrypt</button>
@@ -87,47 +88,16 @@
     </footer>
   </main>
 
-  <!-- Load libraries AFTER HTML exists -->
-  <script src="./libs/qrcode.min.js"></script>
-  <script src="./libs/jsQR.js"></script>
+  <!-- Load libraries AFTER HTML exists (keep your working case/path) -->
+  <script src="./Libs/qrcode.min.js"></script>
+  <script src="./Libs/jsQR.js"></script>
 
+  <!-- Your split JS files (if you use them) -->
   <script src="./js/base64.js"></script>
   <script src="./js/password.js"></script>
   <script src="./js/crypto.js"></script>
   <script src="./js/qr.js"></script>
   <script src="./js/ui.js"></script>
-
-  <!-- NEW: small self-test that runs even if app.js fails -->
-  <script>
-    (function () {
-      const btn = document.getElementById("btnSelfTest");
-      const qrErr = document.getElementById("qrError");
-      const show = (cls, msg) => { qrErr.className = "status " + cls; qrErr.textContent = msg; };
-
-      btn.addEventListener("click", async () => {
-        // Check if libs loaded
-        if (!window.QRCode || !window.QRCode.toCanvas) {
-          show("err", "Self-Test FAIL: QRCode library not loaded. Check libs/qrcode.min.js path (404?)");
-          return;
-        }
-        if (!window.jsQR) {
-          show("err", "Self-Test FAIL: jsQR library not loaded. Check libs/jsQR.js path (404?)");
-          return;
-        }
-
-        // Try drawing a tiny test QR
-        try {
-          const c = document.getElementById("qrCanvas");
-          c.width = 240; c.height = 240;
-          await window.QRCode.toCanvas(c, "TEST", { width: 240, margin: 1 });
-          c.style.width = "240px"; c.style.height = "240px"; c.style.display = "block";
-          show("ok", "Self-Test OK: QR rendering works ✅");
-        } catch (e) {
-          show("err", "Self-Test FAIL: " + (e?.message || e));
-        }
-      });
-    })();
-  </script>
 
   <script src="./app.js"></script>
 </body>
