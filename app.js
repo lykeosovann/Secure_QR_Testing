@@ -40,6 +40,10 @@ const hiddenCanvas = document.getElementById("hiddenCanvas");
 /* Optional debug line in HTML (if you added it) */
 const qrLoadDebug = document.getElementById("qrLoadDebug");
 
+console.log("QRCode exists?", !!window.QRCode);
+console.log("QRCode.toCanvas exists?", !!(window.QRCode && window.QRCode.toCanvas));
+console.log("QRCode is function?", typeof window.QRCode === "function");
+
 /* ---------- State ---------- */
 let loadedPayload = null;
 
