@@ -1,5 +1,6 @@
 async function drawQr(canvas, text) {
   if (!window.QRCode || typeof window.QRCode.toCanvas !== "function") {
+    console.error("QRCode global:", window.QRCode);
     throw new Error("QR generator library not loaded (QRCode.toCanvas missing)");
   }
 
@@ -13,6 +14,7 @@ async function drawQr(canvas, text) {
     errorCorrectionLevel: "H",
   });
 }
+
 
 function readQrFromImage(file, hiddenCanvas) {
   return new Promise((resolve, reject) => {
