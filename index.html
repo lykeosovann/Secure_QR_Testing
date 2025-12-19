@@ -3,37 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AES + QR Secure Message System</title>
+  <title>AES + QR (PC Working)</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
   <main class="app">
     <header class="header">
-      <h1 class="title">AES + QR Secure Message System</h1>
-      <p class="subtitle">Encrypt a message into a QR. Decrypt requires the same password.</p>
+      <h1 class="title">AES + QR Secure Message</h1>
+      <p class="subtitle">PC flow: Encrypt → Download QR PNG → Upload QR → Decrypt</p>
     </header>
 
-    <!-- Encrypt panel -->
+    <!-- ENCRYPT -->
     <section class="panel">
       <div class="panel-head">Encrypt &amp; Generate QR</div>
 
-      <label for="secretMsg">Secret message:</label>
-      <textarea id="secretMsg" placeholder="Type your secret message here..."></textarea>
+      <label for="secretMsg">Message:</label>
+      <textarea id="secretMsg" placeholder="Type your message..."></textarea>
 
-      <label for="encPwd">Password (shared secret key):</label>
+      <label for="encPwd">Password:</label>
       <div class="input-icon">
         <input id="encPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
-        <button id="encPwdToggle" class="icon-btn" type="button" aria-label="Show/Hide password">👁</button>
+        <button id="encPwdToggle" class="icon-btn" type="button">👁</button>
       </div>
 
       <div class="hint">
-        Password rules: at least <b>12</b> chars, must include <b>lower</b>, <b>upper</b>, <b>digit</b>,
-        and one symbol from <b>!@#$%^&amp;*()</b>.
+        Min <b>12</b> chars with <b>lower</b>, <b>upper</b>, <b>digit</b>, and one symbol from <b>!@#$%^&amp;*()</b>.
       </div>
 
       <div class="btn-row">
         <button id="btnEncrypt" class="btn" type="button">Encrypt &amp; Create QR</button>
+        <button id="btnDownloadQr" class="btn" type="button">Download QR PNG</button>
       </div>
 
       <div id="encStatus" class="status"></div>
@@ -41,12 +41,9 @@
       <div class="grid">
         <div class="card">
           <div class="card-title">QR Code</div>
-          <canvas id="qrCanvas" width="240" height="240"></canvas>
-          <div id="qrError" class="status"></div>
-          <p class="small">Tip: long-press (mobile) or right-click (PC) to save QR image.</p>
+          <canvas id="qrCanvas" width="520" height="520"></canvas>
+          <p class="small">Use “Download QR PNG” (recommended). Avoid screenshots.</p>
         </div>
-        <div class="small">QR Link (what phone opens):</div>
-        <pre id="qrLinkOut">(none)</pre>
 
         <div class="card">
           <div class="card-title">Encrypted payload (inside QR)</div>
@@ -55,25 +52,18 @@
       </div>
     </section>
 
-    <!-- Decrypt panel -->
+    <!-- DECRYPT -->
     <section class="panel">
-      <div class="panel-head">Decrypt From QR Image</div>
+      <div class="panel-head">Decrypt From QR Image (PC)</div>
 
-      <label>Select QR Image:</label>
-      <div class="file-row">
-        <!-- IMPORTANT: input is visible to JS, but styled -->
-        <input id="qrFile" class="file-input" type="file" accept="image/*" />
-        <span id="qrFileName" class="file-name">No file selected</span>
-      </div>
-      <div id="qrLoadDebug" class="status"></div>
-      <div class="hint">After selecting an image, the QR will be loaded automatically.</div>
+      <label for="qrFile">Upload QR image (PNG recommended):</label>
+      <input id="qrFile" type="file" accept="image/*" />
 
-      <label for="decPwd">Password (same as encryption):</label>
+      <label for="decPwd">Password:</label>
       <div class="input-icon">
         <input id="decPwd" type="password" placeholder="Enter password..." autocomplete="new-password" />
-        <button id="decPwdToggle" class="icon-btn" type="button" aria-label="Show/Hide password">👁</button>
+        <button id="decPwdToggle" class="icon-btn" type="button">👁</button>
       </div>
-
 
       <div class="btn-row">
         <button id="btnDecrypt" class="btn" type="button">Decrypt</button>
@@ -82,27 +72,26 @@
       <div id="decStatus" class="status"></div>
 
       <label for="decMsg">Decrypted message:</label>
-      <textarea id="decMsg" readonly placeholder="Decrypted message will appear here..."></textarea>
+      <textarea id="decMsg" readonly placeholder="Plaintext will appear here..."></textarea>
 
       <canvas id="hiddenCanvas" class="hidden"></canvas>
     </section>
 
     <footer class="footer">
-      <p class="small">Note: Encryption/decryption happens locally in your browser. Keep passwords private.</p>
+      <p class="small">Encryption/decryption happens locally in your browser.</p>
     </footer>
   </main>
 
-  <!-- Load libraries AFTER HTML exists (keep your working case/path) -->
+  <!-- CDN libs (stable) -->
   <script src="./libs/qrcode.min.js"></script>
   <script src="./libs/jsQR.js"></script>
 
-  <!-- Your split JS files (if you use them) -->
+  <!-- your scripts -->
   <script src="./js/base64.js"></script>
   <script src="./js/password.js"></script>
   <script src="./js/crypto.js"></script>
   <script src="./js/qr.js"></script>
   <script src="./js/ui.js"></script>
-
   <script src="./app.js"></script>
 </body>
 </html>
