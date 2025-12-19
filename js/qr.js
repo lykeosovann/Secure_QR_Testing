@@ -8,7 +8,7 @@
 async function drawQr(canvas, text) {
   if (!canvas) throw new Error("qrCanvas not found");
 
-  const SIZE = 420;
+  const SIZE = 600;
   canvas.width = SIZE;
   canvas.height = SIZE;
   canvas.style.width = SIZE + "px";
@@ -22,7 +22,7 @@ async function drawQr(canvas, text) {
   if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
     await window.QRCode.toCanvas(canvas, text, {
       width: SIZE,
-      margin: 2,
+      margin: 4,
       errorCorrectionLevel: "H",
     });
     return;
@@ -58,8 +58,6 @@ async function drawQr(canvas, text) {
   throw new Error("QR library loaded file, but window.QRCode is missing.");
 }
 
-
-
 function readQrFromImage(file, hiddenCanvas) {
   return new Promise((resolve, reject) => {
     if (!file) return reject(new Error("No image selected."));
@@ -67,6 +65,8 @@ function readQrFromImage(file, hiddenCanvas) {
     if (typeof window.jsQR !== "function") return reject(new Error("jsQR not loaded."));
 
     const img = new Image();
+    img.crossOrigin = "anonymous";
+
     img.onload = () => {
       const ctx = hiddenCanvas.getContext("2d", { willReadFrequently: true });
 
@@ -88,7 +88,12 @@ function readQrFromImage(file, hiddenCanvas) {
         ctx.drawImage(img, 0, 0, w, h);
 
         const imageData = ctx.getImageData(0, 0, w, h);
-        const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+
+        // ✅ MAIN FIX: attempt both normal and inverted colors
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "attemptBoth",
+        });
+
         if (code && code.data) return resolve(String(code.data).trim());
       }
 
@@ -96,6 +101,7 @@ function readQrFromImage(file, hiddenCanvas) {
     };
 
     img.onerror = () => reject(new Error("Failed to load image."));
+
     img.src = URL.createObjectURL(file);
   });
 }
