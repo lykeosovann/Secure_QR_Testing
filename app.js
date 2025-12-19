@@ -222,7 +222,10 @@ btnDecrypt.addEventListener("click", async () => {
   setStatus(decStatus, "", "");
 
   if (!loadedPayload) {
-    return setStatus(decStatus, "err", "Please scan the QR (open link) or select a QR image first.");
+    const ok = tryLoadPayloadFromHash();
+    if (!ok) {
+      return setStatus(decStatus, "err", "No QR payload found. Scan the QR link again or select a QR image.");
+    }
   }
 
   const pwd = decPwd.value.trim();
