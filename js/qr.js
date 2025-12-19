@@ -13,33 +13,81 @@
 
 async function drawQr(canvas, text) {
   if (!canvas) throw new Error("qrCanvas not found");
-  if (!window.QRCode || typeof window.QRCode.toCanvas !== "function") {
-    throw new Error("QRCode.toCanvas not available. Check libs/qrcode.min.js");
-  }
 
-  // Big QR + strong ECC for phone reliability
   const SIZE = 420;
 
-  // Force canvas real size
+  // Always size the canvas
   canvas.width = SIZE;
   canvas.height = SIZE;
-
-  // Clear
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, SIZE, SIZE);
-
-  // Draw QR
-  await window.QRCode.toCanvas(canvas, text, {
-    width: SIZE,
-    margin: 2,
-    errorCorrectionLevel: "H",
-  });
-
-  // Force visible size (CSS sometimes hides/shrinks canvas)
   canvas.style.width = SIZE + "px";
   canvas.style.height = SIZE + "px";
   canvas.style.display = "block";
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  // CASE A: "qrcode" library (has QRCode.toCanvas)
+  if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
+    await window.QRCode.toCanvas(canvas, text, {
+      width: SIZE,
+      margin: 2,
+      errorCorrectionLevel: "H",
+    });
+    return;
+  }
+
+  // CASE B: "qrcodejs" library (new QRCode(...))
+  // It renders into a DIV, not a canvas, so we convert its <img>/<canvas> to your canvas.
+  if (window.QRCode && typeof window.QRCode === "function") {
+    // Create a temporary container
+    const tmp = document.createElement("div");
+    tmp.style.position = "fixed";
+    tmp.style.left = "-99999px";
+    tmp.style.top = "-99999px";
+    document.body.appendChild(tmp);
+
+    // Render QR in the temp container
+    tmp.innerHTML = "";
+    new window.QRCode(tmp, {
+      text,
+      width: SIZE,
+      height: SIZE,
+      correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 3,
+    });
+
+    // qrcodejs may create an <img> or <canvas>
+    const img = tmp.querySelector("img");
+    const c2 = tmp.querySelector("canvas");
+
+    if (img) {
+      await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => {
+          ctx.clearRect(0, 0, SIZE, SIZE);
+          ctx.drawImage(im, 0, 0, SIZE, SIZE);
+          res();
+        };
+        im.onerror = rej;
+        im.src = img.src;
+      });
+      document.body.removeChild(tmp);
+      return;
+    }
+
+    if (c2) {
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      ctx.drawImage(c2, 0, 0, SIZE, SIZE);
+      document.body.removeChild(tmp);
+      return;
+    }
+
+    document.body.removeChild(tmp);
+    throw new Error("qrcodejs rendered nothing.");
+  }
+
+  throw new Error("QR library not loaded (qrcode or qrcodejs). Check libs/qrcode.min.js");
 }
+
 
 /**
  * Try to decode QR using jsQR at multiple scales.

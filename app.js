@@ -151,7 +151,7 @@ btnEncrypt.addEventListener("click", async () => {
     setStatus(encStatus, "ok", "QR link created ✅ Scan with phone to open this page.");
   } catch (e) {
     console.error(e);
-    setStatus(encStatus, "err", "Encryption/QR failed.");
+    setStatus(encStatus, "err", "Encryption/QR failed: " + (e?.message || e));
   }
 });
 
