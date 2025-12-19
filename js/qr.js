@@ -33,7 +33,7 @@ function readQrFromImage(file, hiddenCanvas) {
     img.onload = () => {
       const ctx = hiddenCanvas.getContext("2d");
 
-      // Downscale huge photos to improve decode reliability
+      // Downscale big images for better decoding
       const maxSide = 1200;
       let w = img.naturalWidth;
       let h = img.naturalHeight;
@@ -48,9 +48,13 @@ function readQrFromImage(file, hiddenCanvas) {
       ctx.drawImage(img, 0, 0, w, h);
 
       const imageData = ctx.getImageData(0, 0, w, h);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
 
+      // jsQR must exist
+      if (!window.jsQR) return reject(new Error("jsQR library not loaded."));
+
+      const code = window.jsQR(imageData.data, imageData.width, imageData.height);
       if (!code || !code.data) return reject(new Error("QR not detected. Use a clearer image."));
+
       resolve(String(code.data).trim());
     };
 

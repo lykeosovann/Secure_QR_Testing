@@ -91,27 +91,18 @@ qrFile.addEventListener("change", async () => {
 
   try {
     setStatus(decStatus, "", "Reading QR image...");
-
     const qrText = await readQrFromImage(file, hiddenCanvas);
 
-    // Important: trim and parse clean JSON
     loadedPayload = JSON.parse(qrText.trim());
 
-    setStatus(
-      decStatus,
-      "ok",
-      "QR loaded ✅ Enter password and click Decrypt."
-    );
+    setStatus(decStatus, "ok", "QR loaded ✅ Now enter password and click Decrypt.");
   } catch (e) {
     console.error(e);
     loadedPayload = null;
-    setStatus(
-      decStatus,
-      "err",
-      "Failed to read QR. Use a clear QR image."
-    );
+    setStatus(decStatus, "err", "QR load failed: " + (e?.message || e));
   }
 });
+
 
 /************************************************************
  * DECRYPT
