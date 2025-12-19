@@ -68,7 +68,13 @@ btnEncrypt.addEventListener("click", async () => {
     const payloadText = JSON.stringify(payload);
 
     payloadOut.textContent = payloadText;
-    await drawQr(qrCanvas, payloadText);
+    const base = window.location.origin + window.location.pathname;
+    const token = btoa(unescape(encodeURIComponent(payloadText)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+
+    const url = `${base}#t=${token}`;
+
+    await drawQr(qrCanvas, url);
 
     setStatus(encStatus, "ok", "QR created successfully ✅");
   } catch (e) {
@@ -175,3 +181,21 @@ btnDecrypt.addEventListener("click", async () => {
     setStatus(decStatus, "err", "Decrypt failed.");
   }
 });
+
+(function loadFromUrl() {
+  const hash = window.location.hash || "";
+  const m = hash.match(/t=([^&]+)/);
+  if (!m) return;
+
+  try {
+    const token = m[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = token + "===".slice((token.length + 3) % 4);
+    const json = decodeURIComponent(escape(atob(padded)));
+
+    loadedPayload = JSON.parse(json);
+    setStatus(decStatus, "ok", "QR payload loaded from link ✅ Enter password and Decrypt.");
+  } catch (e) {
+    console.error(e);
+    setStatus(decStatus, "err", "Invalid QR link payload.");
+  }
+})();
