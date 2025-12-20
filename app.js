@@ -1,105 +1,206 @@
+// -------------------- DOM --------------------
 const secretMsg = document.getElementById("secretMsg");
 const encPwd = document.getElementById("encPwd");
-const encPwdToggle = document.getElementById("encPwdToggle");
+const encMode = document.getElementById("encMode");
 const btnEncrypt = document.getElementById("btnEncrypt");
-const btnDownloadQr = document.getElementById("btnDownloadQr");
 const encStatus = document.getElementById("encStatus");
 const qrCanvas = document.getElementById("qrCanvas");
 const payloadOut = document.getElementById("payloadOut");
 
 const qrFile = document.getElementById("qrFile");
+const qrFileName = document.getElementById("qrFileName");
 const decPwd = document.getElementById("decPwd");
-const decPwdToggle = document.getElementById("decPwdToggle");
 const btnDecrypt = document.getElementById("btnDecrypt");
 const decMsg = document.getElementById("decMsg");
 const decStatus = document.getElementById("decStatus");
 const hiddenCanvas = document.getElementById("hiddenCanvas");
 
-let loadedPayloadObj = null;
+// Password toggle buttons (if you have them)
+const encPwdToggle = document.getElementById("encPwdToggle");
+const decPwdToggle = document.getElementById("decPwdToggle");
 
-function togglePassword(input, btn) {
-  const show = input.type === "password";
-  input.type = show ? "text" : "password";
-  btn.textContent = show ? "🙈" : "👁";
+// -------------------- State --------------------
+let loadedData = null; // can be {type:"plain",text:"..."} or secure payload object
+
+// -------------------- Helpers --------------------
+function setStatus(el, kind, msg) {
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (kind === "ok") el.classList.add("ok");
+  if (kind === "err") el.classList.add("err");
+  el.textContent = msg || "";
 }
 
-encPwdToggle.addEventListener("click", () => togglePassword(encPwd, encPwdToggle));
-decPwdToggle.addEventListener("click", () => togglePassword(decPwd, decPwdToggle));
+function safeJsonParse(s) {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
+}
 
-btnDownloadQr.addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.download = "secure_qr.png";
-  a.href = qrCanvas.toDataURL("image/png");
-  a.click();
-});
+// Detect payload type
+function isSecurePayload(obj) {
+  return (
+    obj &&
+    typeof obj === "object" &&
+    obj.v === 1 &&
+    typeof obj.iter === "number" &&
+    typeof obj.salt === "string" &&
+    typeof obj.iv === "string" &&
+    typeof obj.ct === "string"
+  );
+}
 
+function isPlainPayload(obj) {
+  return obj && typeof obj === "object" && obj.type === "plain" && typeof obj.text === "string";
+}
+
+// -------------------- UI behaviors --------------------
+if (encPwdToggle) {
+  encPwdToggle.addEventListener("click", () => {
+    encPwd.type = encPwd.type === "password" ? "text" : "password";
+  });
+}
+if (decPwdToggle) {
+  decPwdToggle.addEventListener("click", () => {
+    decPwd.type = decPwd.type === "password" ? "text" : "password";
+  });
+}
+
+// Enable/disable password input depending on mode
+function syncEncryptModeUI() {
+  const mode = encMode ? encMode.value : "secure";
+  if (mode === "plain") {
+    encPwd.value = "";
+    encPwd.disabled = true;
+    if (encPwdToggle) encPwdToggle.disabled = true;
+  } else {
+    encPwd.disabled = false;
+    if (encPwdToggle) encPwdToggle.disabled = false;
+  }
+}
+if (encMode) {
+  encMode.addEventListener("change", syncEncryptModeUI);
+  syncEncryptModeUI();
+}
+
+// -------------------- Encrypt --------------------
 btnEncrypt.addEventListener("click", async () => {
   try {
     setStatus(encStatus, "", "");
-    const msg = secretMsg.value.trim();
-    const pwd = encPwd.value; // do NOT trim password
+    const msg = (secretMsg.value || "").trim();
+    if (!msg) return setStatus(encStatus, "err", "Message required.");
 
-    if (!msg) return setStatus(encStatus, "err", "Message required");
+    const mode = encMode ? encMode.value : "secure";
+
+    // ---- Plain mode: store plaintext directly in QR ----
+    if (mode === "plain") {
+      const plainPayload = { type: "plain", text: msg };
+
+      payloadOut.textContent = JSON.stringify(plainPayload, null, 2);
+      await drawQr(qrCanvas, JSON.stringify(plainPayload));
+
+      setStatus(encStatus, "ok", "Plain QR created (no password).");
+      return;
+    }
+
+    // ---- Secure mode: AES encrypt with password ----
+    const pwd = encPwd.value || "";
     const pErr = validatePassword(pwd);
     if (pErr) return setStatus(encStatus, "err", pErr);
 
-    const payload = await encryptMessage(msg, pwd);
-    const payloadJson = JSON.stringify(payload);
+    const securePayload = await encryptMessage(msg, pwd);
 
-    // QR stores JSON directly (smaller and reliable)
-    loadedPayloadObj = payload;
-    payloadOut.textContent = payloadJson;
+    payloadOut.textContent = JSON.stringify(securePayload, null, 2);
+    await drawQr(qrCanvas, JSON.stringify(securePayload));
 
-    await drawQr(qrCanvas, payloadJson);
-    setStatus(encStatus, "ok", "QR created ✅ Download PNG and upload it to decrypt.");
+    setStatus(encStatus, "ok", "Secure QR created (password required).");
   } catch (e) {
     console.error(e);
-    setStatus(encStatus, "err", "Encrypt/QR failed: " + (e?.message || String(e)));
+    setStatus(encStatus, "err", "Encryption/QR failed: " + (e?.message || String(e)));
   }
 });
 
-qrFile.addEventListener("change", async () => {
-  decMsg.value = "";
-  setStatus(decStatus, "", "");
-  loadedPayloadObj = null;
+// -------------------- Auto-load QR when user selects image --------------------
+if (qrFile) {
+  qrFile.addEventListener("change", async () => {
+    try {
+      setStatus(decStatus, "", "");
+      loadedData = null;
 
-  const file = qrFile.files && qrFile.files[0];
-  if (!file) return;
+      const file = qrFile.files && qrFile.files[0];
+      if (!file) return;
 
-  try {
-    setStatus(decStatus, "", "Reading QR...");
-    const text = await readQrFromImage(file, hiddenCanvas);
-    loadedPayloadObj = JSON.parse(text);
-    setStatus(decStatus, "ok", "QR loaded ✅ Enter password and click Decrypt.");
-  } catch (e) {
-    console.error(e);
-    setStatus(decStatus, "err", "QR load failed: " + (e?.message || String(e)));
-  }
-});
+      if (qrFileName) qrFileName.textContent = file.name;
 
-btnDecrypt.addEventListener("click", async () => {
-  decMsg.value = "";
-  setStatus(decStatus, "", "");
+      const qrText = await readQrFromImage(file, hiddenCanvas);
 
-  if (!loadedPayloadObj) {
-    return setStatus(decStatus, "err", "Upload QR image first (or encrypt first on this page).");
-  }
+      const parsed = safeJsonParse(qrText);
+      if (!parsed) {
+        return setStatus(decStatus, "err", "QR does not contain valid JSON payload.");
+      }
 
-  const pwd = decPwd.value; // do NOT trim password
-  if (!pwd) return setStatus(decStatus, "err", "Password required");
+      // Save payload
+      loadedData = parsed;
 
-  const pErr = validatePassword(pwd);
-  if (pErr) return setStatus(decStatus, "err", pErr);
-
-  try {
-    const plain = await decryptMessage(loadedPayloadObj, pwd);
-    decMsg.value = plain;
-    setStatus(decStatus, "ok", "Decrypted ✅");
-  } catch (e) {
-    console.error(e);
-    if (e && e.name === "OperationError") {
-      return setStatus(decStatus, "err", "Wrong password (or QR data corrupted).");
+      // Helpful message
+      if (isSecurePayload(parsed)) {
+        setStatus(decStatus, "ok", "Secure QR loaded. Password required to decrypt.");
+      } else if (isPlainPayload(parsed)) {
+        setStatus(decStatus, "ok", "Plain QR loaded. No password needed.");
+      } else {
+        setStatus(decStatus, "ok", "QR loaded. Unknown format, will try best.");
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus(decStatus, "err", e?.message || String(e));
     }
-    setStatus(decStatus, "err", "Decrypt failed: " + (e?.message || String(e)));
+  });
+}
+
+// -------------------- Decrypt --------------------
+btnDecrypt.addEventListener("click", async () => {
+  try {
+    setStatus(decStatus, "", "");
+    decMsg.value = "";
+
+    if (!loadedData) return setStatus(decStatus, "err", "Please select a QR image first.");
+
+    // ---- If plain QR ----
+    if (isPlainPayload(loadedData)) {
+      decMsg.value = loadedData.text;
+      return setStatus(decStatus, "ok", "Decoded plaintext (no password).");
+    }
+
+    // ---- If secure QR ----
+    if (isSecurePayload(loadedData)) {
+      const pwd = (decPwd.value || "").trim();
+      if (!pwd) return setStatus(decStatus, "err", "Password required for this QR.");
+
+      // optional: enforce same rules on decrypt too
+      const pErr = validatePassword(pwd);
+      if (pErr) return setStatus(decStatus, "err", pErr);
+
+      try {
+        const plain = await decryptMessage(loadedData, pwd);
+        decMsg.value = plain;
+        return setStatus(decStatus, "ok", "Decrypted successfully.");
+      } catch {
+        return setStatus(decStatus, "err", "Invalid password or corrupted QR payload.");
+      }
+    }
+
+    // ---- Fallback (unknown payload) ----
+    // If QR holds raw text, show it directly:
+    if (typeof loadedData === "string") {
+      decMsg.value = loadedData;
+      return setStatus(decStatus, "ok", "Decoded text.");
+    }
+
+    return setStatus(decStatus, "err", "Unsupported QR payload format.");
+  } catch (e) {
+    console.error(e);
+    setStatus(decStatus, "err", e?.message || String(e));
   }
 });
